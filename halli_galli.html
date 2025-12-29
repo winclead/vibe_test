@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹 할리갈리 (Web Halli Galli)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #setup-screen {
+            position: absolute;
+            z-index: 10;
+            background: rgba(44, 62, 80, 0.95);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 { margin-bottom: 10px; }
+
+        .game-board {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            max-width: 800px;
+            flex-wrap: wrap; /* 다수 플레이어 배치를 위해 */
+            background-color: #27ae60; /* 테이블 색상 */
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .player-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 45%; /* 4명일 때 2열로 배치 */
+            margin-bottom: 10px;
+        }
+
+        .card-slot {
+            width: 120px;
+            height: 170px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .card {
+            width: 120px;
+            height: 170px;
+            background-color: white;
+            border-radius: 10px;
+            color: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .card.back {
+            background-color: #e74c3c;
+            background-image: repeating-linear-gradient(45deg, #c0392b 25%, transparent 25%, transparent 75%, #c0392b 75%, #c0392b), repeating-linear-gradient(45deg, #c0392b 25%, #e74c3c 25%, #e74c3c 75%, #c0392b 75%, #c0392b);
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px;
+        }
+
+        .bell-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        #bell {
+            width: 80px;
+            height: 80px;
+            background-color: #f1c40f;
+            border-radius: 50%;
+            border: 5px solid #f39c12;
+            box-shadow: 0 5px 0 #d35400;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            transition: all 0.1s;
+        }
+
+        #bell:active, .bell-ring {
+            transform: scale(0.95) !important;
+            box-shadow: 0 2px 0 #d35400 !important;
+        }
+
+        .controls {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            text-align: center;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            height: 30px;
+        }
+
+        /* 카드 내부 과일 배치 스타일 */
+        .card-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        .fruit-icon { 
+            font-size: 2rem; 
+            margin: 2px;
+        }
+        
+        /* 설정 화면 스타일 */
+        .setup-btn {
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        select {
+            padding: 5px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 설정 화면 -->
+    <div id="setup-screen">
+        <h1>할리갈리 설정</h1>
+        <div>
+            <label for="player-count" style="font-size: 1.5rem;">참가 인원: </label>
+            <select id="player-count">
+                <option value="2">2명</option>
+                <option value="3">3명</option>
+                <option value="4">4명</option>
+            </select>
+        </div>
+        <div style="margin-top: 20px; text-align: left; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px;">
+            <h3>키 조작 설명</h3>
+            <p>Player 1: 뒤집기(Q), 종(A)</p>
+            <p>Player 2: 뒤집기(P), 종(L)</p>
+            <p>Player 3: 뒤집기(Z), 종(X)</p>
+            <p>Player 4: 뒤집기(M), 종(K)</p>
+        </div>
+        <button class="setup-btn" onclick="startGame()">게임 시작</button>
+    </div>
+
+    <h1>웹 할리갈리 🍓🍌🍈🍑</h1>
+
+    <div class="status" id="status-msg">준비 중...</div>
+
+    <div class="game-board" id="game-board" style="display: none;">
+        <!-- Bell -->
+        <div class="bell-area">
+            <div id="bell">🔔</div>
+        </div>
+        
+        <!-- 플레이어 영역은 JS로 생성됩니다 -->
+    </div>
+
+    <script>
+        const fruits = ['🍓', '🍌', '🍈', '🍑'];
+        const counts = [1, 2, 3, 4, 5];
+        
+        let players = []; // { id, deck: [], openCard: null, keys: {flip, bell} }
+        let turn = 0; // index of current player
+        let gameActive = false;
+        let playerCount = 2;
+
+        const keyConfigs = [
+            { flip: 'q', bell: 'a', name: 'Player 1' },
+            { flip: 'p', bell: 'l', name: 'Player 2' },
+            { flip: 'z', bell: 'x', name: 'Player 3' },
+            { flip: 'm', bell: 'k', name: 'Player 4' }
+        ];
+
+        function startGame() {
+            playerCount = parseInt(document.getElementById('player-count').value);
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-board').style.display = 'flex';
+            initGame(playerCount);
+        }
+
+        // 게임 초기화
+        function initGame(numPlayers) {
+            gameActive = true;
+            turn = 0;
+            players = [];
+
+            // 플레이어 데이터 초기화
+            for(let i=0; i<numPlayers; i++) {
+                players.push({
+                    id: i + 1,
+                    deck: [],
+                    openCard: null,
+                    config: keyConfigs[i]
+                });
+            }
+
+            // UI 생성
+            createPlayerUI();
+
+            let fullDeck = [];
+            // 덱 생성 (각 과일별로 1~5개짜리 카드를 적당히 섞어서 생성)
+            for (let f of fruits) {
+                for (let c of counts) {
+                    // 인원수에 따라 카드 장수 조절 (기본 3세트)
+                    // 4명이면 카드가 금방 동나므로 4세트로 늘림
+                    let sets = numPlayers >= 4 ? 4 : 3;
+                    for(let i=0; i<sets; i++) fullDeck.push({ fruit: f, count: c });
+                }
+            }
+            
+            // 셔플
+            fullDeck.sort(() => Math.random() - 0.5);
+
+            // 분배
+            const cardsPerPlayer = Math.floor(fullDeck.length / numPlayers);
+            for(let i=0; i<numPlayers; i++) {
+                players[i].deck = fullDeck.slice(i * cardsPerPlayer, (i + 1) * cardsPerPlayer);
+            }
+
+            document.getElementById('status-msg').innerText = `게임 시작! ${players[0].config.name}의 차례 (${players[0].config.flip.toUpperCase()}키)`;
+            updateUI();
+        }
+
+        function createPlayerUI() {
+            const board = document.getElementById('game-board');
+            // 벨(bell-area)은 유지하고 나머지 플레이어 영역 삭제
+            const bell = board.querySelector('.bell-area');
+            board.innerHTML = '';
+            board.appendChild(bell);
+
+            players.forEach(p => {
+                const pDiv = document.createElement('div');
+                pDiv.className = 'player-area';
+                pDiv.innerHTML = `
+                    <h2>${p.config.name}</h2>
+                    <div class="card-slot">
+                        <div id="p${p.id}-deck-visual" class="card back"></div>
+                    </div>
+                    <div>남은 카드: <span id="p${p.id}-count">0</span></div>
+                    <div class="card-slot" id="p${p.id}-open-slot"></div>
+                    <div class="controls">
+                        뒤집기: <strong>${p.config.flip.toUpperCase()}</strong> / 종: <strong>${p.config.bell.toUpperCase()}</strong>
+                    </div>
+                `;
+                board.appendChild(pDiv);
+            });
+        }
+
+        function updateUI() {
+            players.forEach(p => {
+                document.getElementById(`p${p.id}-count`).innerText = p.deck.length;
+                const deckVisual = document.getElementById(`p${p.id}-deck-visual`);
+                if(deckVisual) deckVisual.style.display = p.deck.length > 0 ? 'flex' : 'none';
+                
+                renderOpenCard(`p${p.id}-open-slot`, p.openCard);
+            });
+        }
+
+        function renderOpenCard(slotId, card) {
+            const slot = document.getElementById(slotId);
+            slot.innerHTML = '';
+            if (card) {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card';
+                
+                // 과일 개수만큼 아이콘 반복 표시
+                let content = `<div class="card-content">`;
+                for(let i=0; i<card.count; i++) {
+                    content += `<div class="fruit-icon">${card.fruit}</div>`;
+                }
+                content += `</div>`;
+                
+                cardDiv.innerHTML = content;
+                slot.appendChild(cardDiv);
+            }
+        }
+
+        function flipCard(playerIndex) {
+            if (!gameActive) return;
+            
+            // 현재 턴인 플레이어인지 확인
+            if (turn !== playerIndex) {
+                return;
+            }
+
+            const player = players[playerIndex];
+
+            if (player.deck.length === 0) {
+                // 카드가 없으면 탈락 처리해야 하지만, 간단히 패배 처리
+                endGame(playerIndex === 0 ? 2 : 1); // 임시 로직
+                return; 
+            }
+
+            player.openCard = player.deck.pop();
+            
+            // 다음 턴 계산
+            let nextTurn = (turn + 1) % players.length;
+            
+            turn = nextTurn;
+            const nextPlayer = players[turn];
+            document.getElementById('status-msg').innerText = `${nextPlayer.config.name}의 차례 (${nextPlayer.config.flip.toUpperCase()}키)`;
+            
+            updateUI();
+        }
+
+        function ringBell(playerIndex) {
+            if (!gameActive) return;
+            const player = players[playerIndex];
+
+            // 종 애니메이션
+            const bell = document.getElementById('bell');
+            bell.classList.add('bell-ring');
+            setTimeout(() => bell.classList.remove('bell-ring'), 200);
+
+            // 판정 로직
+            let totalFruits = {};
+            players.forEach(p => {
+                if(p.openCard) {
+                    totalFruits[p.openCard.fruit] = (totalFruits[p.openCard.fruit] || 0) + p.openCard.count;
+                }
+            });
+
+            // 정확히 5개인 과일이 있는지 확인
+            const isHalliGalli = Object.values(totalFruits).includes(5);
+
+            if (isHalliGalli) {
+                document.getElementById('status-msg').innerText = `🔔 할리갈리! ${player.config.name} 승리!`;
+                
+                // 바닥에 깔린 모든 카드 수거
+                const gatheredCards = [];
+                players.forEach(p => {
+                    if(p.openCard) {
+                        gatheredCards.push(p.openCard);
+                        p.openCard = null;
+                    }
+                });
+                
+                // 승자 덱에 추가
+                player.deck.unshift(...gatheredCards);
+                
+                // 이긴 사람이 선
+                turn = playerIndex;
+                document.getElementById('status-msg').innerText += ` ${player.config.name}부터 다시 시작!`;
+            } else {
+                document.getElementById('status-msg').innerText = `❌ 실수! ${player.config.name}가 다른 사람들에게 카드를 줍니다.`;
+                
+                // 벌칙: 다른 모든 플레이어에게 내 카드 1장씩 주기
+                if(player.deck.length >= (players.length - 1)) {
+                    players.forEach((p, idx) => {
+                        if(idx !== playerIndex) {
+                            p.deck.unshift(player.deck.pop());
+                        }
+                    });
+                }
+            }
+            updateUI();
+            
+            // 종료 조건 체크
+            const survivors = players.filter(p => p.deck.length > 0 || p.openCard);
+            if (survivors.length === 1) {
+                endGame(survivors[0].config.name);
+            }
+        }
+
+        function endGame(winner) {
+            gameActive = false;
+            document.getElementById('status-msg').innerText = `🎉 게임 종료! ${winner} 최종 승리! 🎉`;
+            alert(`${winner} 최종 승리!`);
+        }
+
+        // 키보드 이벤트 리스너
+        document.addEventListener('keydown', (e) => {
+            if(!gameActive) return;
+            const key = e.key.toLowerCase();
+            
+            players.forEach((p, idx) => {
+                if(key === p.config.flip) flipCard(idx);
+                if(key === p.config.bell) ringBell(idx);
+            });
+        });
+
+        // 초기화면 대기 (initGame은 버튼 클릭 시 호출)
+    </script>
+</body>
+</html>
